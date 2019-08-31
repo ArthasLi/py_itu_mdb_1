@@ -1,0 +1,243 @@
+from sqlQry import sqlQry
+import numpy as np
+import re
+import collections
+from collections import Counter
+
+
+class srvNtcStt:
+
+    def __init__(self, orb_type, rsn, srv, d_s, d_e):
+        self.adm = None
+        self.orb_type = orb_type
+        self.rsn = rsn
+        self.srv = srv
+        self.d_s = str(d_s)+"-01-01"
+        self.d_e = str(d_e) + "-12-31"
+        self.satNbrData = None
+        self.op_sat_nbr_data = None
+        self.adm_sat_nbr_data = None
+        self.adm_op_sat_nbr_data = None
+
+    def ntc_count(self):
+        qry = "SELECT " \
+              "com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntf_rsn='"+self.rsn+"' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='"+self.srv+"'"
+        data = sqlQry(qry)
+        return data.__len__()
+
+    def count_ntc_nbr(self):
+        qry = "SELECT DISTINCT " \
+              "com_el.ntc_id, com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntc_type='"+self.orb_type +"' and com_el.ntf_rsn='"+self.rsn+"' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='"+self.srv+"'"
+        data = sqlQry(qry)
+        return data.__len__()
+
+    def count_ntc_by_year(self, year):
+        qry = "SELECT DISTINCT " \
+              "com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntf_rsn='" + self.rsn + "' and com_el.d_rcv>#" + year + "# and com_el.d_rcv<#" + year + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='"+self.srv+"'"
+        data = sqlQry(qry)
+        return data.__len__()
+
+    def count_grp_nbr(self):
+        qry = "SELECT DISTINCT " \
+              "grp.grp_id " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntf_rsn='" + self.rsn + "' and com_el.d_rcv>#" + self.d_s + "# and com_el.d_rcv<#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='"+self.srv+"'"
+        data = sqlQry(qry)
+        return data
+
+    def count_sat_num(self):
+        qry = "SELECT DISTINCT " \
+              "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE orbit.ntc_id=com_el.ntc_id and com_el.ntc_type='"+self.orb_type + "' and com_el.ntf_rsn = '"+self.rsn+"' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='"+self.srv+"'"
+        data = sqlQry(qry)
+        totalNbr = 0
+        for x in range(0, (data.__len__()-1)):
+           # print (data[x][2])
+            if data[x][2] is None:
+                totalNbr += 0
+            else:
+                totalNbr += data[x][2]
+            #print (data.__len__(), x, data[x][2])
+        #print (totalNbr)
+
+        return totalNbr
+
+    def get_sat_nbr_info(self):
+        qry = "SELECT DISTINCT " \
+              "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name, com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE orbit.ntc_id=com_el.ntc_id and com_el.ntc_type='" + self.orb_type + "' and com_el.ntf_rsn = '" \
+              + self.rsn + "' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + self.srv + "'"
+        self.satNbrData = sqlQry(qry)
+
+    def get_adm_op_sat_nbr_data(self, ntf_rsn, srv_cls, ntc_type, date_s, date_e):
+        qry = "SELECT DISTINCT " \
+              "com_el.adm, grp.op_agcy, orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE " \
+              "com_el.ntc_type='" + ntc_type + "' and com_el.ntf_rsn = '" \
+              + ntf_rsn + "' and com_el.d_rcv>=#" + date_s + "# and com_el.d_rcv<=#" + date_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + srv_cls + "'"
+        data = sqlQry(qry)
+        self.adm_op_sat_nbr_data = data
+
+    def get_op_sat_nbr_info(self, adm, op_id):
+        qry = "SELECT DISTINCT " \
+              "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name, grp.op_agcy, com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE " \
+              "grp.op_agcy=" +str(op_id)+" and com_el.adm='"+adm+"' and orbit.ntc_id=com_el.ntc_id and " \
+              "com_el.ntc_type='" + self.orb_type + "' and com_el.ntf_rsn = '" \
+              + self.rsn + "' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + self.srv + "'"
+        data = sqlQry(qry)
+        self.op_sat_nbr_data = data
+
+    def get_adm_sat_nbr_info(self, adm):
+        qry = "SELECT DISTINCT " \
+              "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name, grp.op_agcy, com_el.d_rcv " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE " \
+              "com_el.adm='"+adm+"' and orbit.ntc_id=com_el.ntc_id and " \
+              "com_el.ntc_type='" + self.orb_type + "' and com_el.ntf_rsn = '" \
+              + self.rsn + "' and com_el.d_rcv>=#" + self.d_s + "# and com_el.d_rcv<=#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + self.srv + "'"
+        self.adm_sat_nbr_data = sqlQry(qry)
+
+    def sat_nbr_adm_ana(self):
+        # "get_sat_nbr_info()" is needed, return the sat number of each administration in the data set
+        data = self.satNbrData
+        satNbrArr = [x[2] for x in self.satNbrData]
+        admArr = [x[4] for x in self.satNbrData]
+        #admStr = ''.join(str(e)+'\n' for e in admArr)
+        C = Counter(admArr)
+        admLst = list(C)
+        admSatNbrCnt = np.zeros((admLst.__len__(), 1))
+        for i in range(0, admSatNbrCnt.__len__(), 1):
+
+            for j in range(0, (data.__len__()-1), 1):
+                #print (admSatNbrCnt.__len__() - 1, i, j)
+                if admLst[i] == data[j][4]:
+                    if data[j][2] is None:
+                        admSatNbrCnt[i] += 0
+                    else:
+                        #print (data[j][2])
+                        admSatNbrCnt[i] += data[j][2]
+        #admLst.extend(admSatNbrCnt)
+        admPair = [(admLst), (admSatNbrCnt)]
+        return admPair
+
+    def adm_ntc_type_check(self,ntf_rsn, ntc_type, srv_cls, d_s, d_e):
+        self.rsn = ntf_rsn
+        self.orb_type = ntc_type
+        self.srv = srv_cls
+        self.d_s = d_s
+        self.d_e = d_e
+        qry = "SELECT DISTINCT " \
+              "com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE " \
+              "com_el.ntc_type='" + ntc_type + "' and com_el.ntf_rsn = '" \
+              + ntf_rsn + "' and com_el.d_rcv>=#" + d_s + "# and com_el.d_rcv<=#" + d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + srv_cls + "'"
+        self.adm_sat_nbr_data = sqlQry(qry)
+
+    def op_ntc_type_check(self, adm, ntf_rsn, ntc_type, srv_cls, d_s, d_e ):
+
+        qry = "SELECT DISTINCT " \
+              "grp.op_agcy " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE " \
+              "com_el.adm='"+adm+"' and com_el.ntc_type='" + ntc_type + "' and com_el.ntf_rsn = '" \
+              + ntf_rsn + "' and com_el.d_rcv>=#" + d_s + "# and com_el.d_rcv<=#" + d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + srv_cls + "'"
+        data = sqlQry(qry)
+        self.adm_op_sat_nbr_data = data
+
+    def count_op_satNbr(self, adm, op_agcy, ntf_rsn, ntc_type, srv_cls, d_s, d_e ):
+        qry = "SELECT DISTINCT " \
+              "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl " \
+              "FROM " \
+              "com_el,grp,srv_cls,orbit " \
+              "WHERE " \
+              "grp.op_agcy=" + str(op_agcy) + " and com_el.adm='" + adm + "' and orbit.ntc_id=com_el.ntc_id and " \
+              "com_el.ntc_type='" +ntc_type + "' and com_el.ntf_rsn = '" \
+              + ntf_rsn + "' and com_el.d_rcv>=#" + d_s + "# and com_el.d_rcv<=#" + d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='" + srv_cls + "'"
+        data = sqlQry(qry)
+        count = 0
+        ntcLst = [x[0] for x in data]
+        C = Counter(ntcLst)
+
+        #distNtcLst = list(C)
+
+        for x in data:
+            if x[2] is None:
+                count += 0
+            else:
+                count += x[2]
+        return (C.__len__(), count)
+
+    def sat_nbr_op_ana(self):
+        # run  adm_ntc_type_check "com_el.adm
+        data = self.adm_sat_nbr_data
+        #  "grp.op_agcy "
+       # satNbrArr = [x[4] for x in self.satNbrData]
+        admArr = [x[0] for x in data]
+        admCount = 0
+        opCount = 0
+        for x in data:
+            self.op_ntc_type_check(x[0], self.rsn, self.orb_type, self.srv, self.d_s, self.d_e)
+            op_data = self.adm_op_sat_nbr_data
+            #  "grp.op_agcy "
+            for y in op_data:
+                satNbr = self.count_op_satNbr(x[0], y[0], self.rsn, self.orb_type, self.srv, self.d_s, self.d_e)
+                if admCount == 0 and opCount == 0:
+                    op_info = [x[0], y[0], satNbr]
+                else:
+                    op_info.append([x[0], y[0], satNbr])
+                    op_info
+            opCount += 1
+        admCount += 1
+        return op_info
+
+    def sat_nbr_adm_ana(self):
+        # run  adm_ntc_type_check "com_el.adm
+        data = self.adm_sat_nbr_data
+        #  "grp.op_agcy "
+       # satNbrArr = [x[4] for x in self.satNbrData]
+        admArr = [x[0] for x in data]
+        admCount = 0
+        opCount = 0
+        for x in data:
+            self.get_adm_sat_nbr_info(x[0], self.rsn, self.orb_type, self.srv, self.d_s, self.d_e)
+            # "orbit.ntc_id, orbit.orb_id, orbit.nbr_sat_pl, com_el.sat_name, grp.op_agcy, com_el.d_rcv "
+
+
+        return adm_info
+
+

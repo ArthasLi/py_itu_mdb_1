@@ -1,0 +1,4 @@
+[gui_scripts]
+treemap_coverage = treemap.scripts:test_coverage
+treemap_demo = treemap.scripts:example
+

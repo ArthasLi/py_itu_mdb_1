@@ -1,0 +1,233 @@
+    str = 'Driver={Microsoft Access Driver (*.mdb)};DBQ=C:\lzy\srs2873/srs2873_part2of2.mdb'
+    conn = pypyodbc.win_connect_mdb(str)
+    #conn = pypyodbc.connect(str)
+    cur = conn.cursor()
+    cur.execute("SELECT sat_name,ntc_id,long_nom FROM com_el where ntf_rsn='N' and ntc_type = 'G' ")
+
+
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+   ********2018-10-25********
+   from srvNtcStt import srvNtcStt
+import numpy as np
+
+if __name__ == "__main__":
+    id = 114520173
+
+    #checkEW = srvNtcStt('EW', 1990, 2018)
+    #data = checkEW.yearstt()
+    #data_ana = Data_handle(data)
+    #data_ana.count_all()
+
+    sttList = np.zeros((8, 2))
+    loop_cnt = 0
+    for x in range(2010, 2019, 1):
+        checkSrvCls = srvNtcStt('N', 'A', 'EC', x, x)
+        #checkSrvCls.get_adm_sat_nbr_info('USA')
+        #checkSrvCls.getOpSatNbrInfo('USA', 532)
+        checkSrvCls.get_sat_nbr_info()
+        #data = checkSrvCls.adm_sat_nbr_data
+        d1 = checkSrvCls.sat_nbr_adm_ana()
+        loop_cnt += 1
+    loop_cnt
+***********************************************
+
+************2018-10-28**************************
+from sqlQry import sqlQry
+import re
+
+
+class ITU_mdb_query:
+    def __init__(self, adm):
+        self.adm = adm
+
+    def find_ntc_lst_byOP(self, adm, agcy_id):
+        qry = "SELECT " \
+              "ntc_id " \
+              "FROM " \
+              "com_el " \
+              "WHERE adm_rsn='"+adm+"'"
+              #"WHERE com_el.adm_rsn='"+adm+"' and grp.op_agcy = " +str(agcy_id)+" and com_el.ntc_id = grp.ntc_id"
+        data = sqlQry(qry)
+        data
+
+        return data
+
+***********************************
+
+****************2018-11-05****************************
+from freqHandle import freq_merg
+import ITU_mdb_query
+import IFIC_handler
+import srvNtcStt
+import numpy
+
+if __name__ == "__main__":
+   #fq_911_band = numpy.loadtxt('911fq')
+   #fq_911_band = freq_merg(fq_911_band)
+   ini = IFIC_handler.IFIC_handler('CHN', 44, 2873)
+   lst = ini.find_ntc_list()
+   for x in lst:
+      prov_9d11 = ini.check_prov_9d11(x)
+   kk =1
+
+*********************************************
+********************2018-11-12*********************
+from srvNtcStt import srvNtcStt
+import numpy as np
+
+if __name__ == "__main__":
+    id = 114520173
+
+    #checkEW = srvNtcStt('EW', 1990, 2018)
+    #data = checkEW.yearstt()
+    #data_ana = Data_handle(data)
+    #data_ana.count_all()
+
+    sttList = np.zeros((8, 2))
+    loop_cnt = 0
+    for x in range(2010, 2019, 1):
+        checkSrvCls = srvNtcStt('N', 'A', 'EC', x, x)
+        #adm_ntc_type_check(ntf_rsn, ntc_type, srv_cls, d_s, d_e)
+        checkSrvCls.adm_ntc_type_check('C', 'N', 'EC', '2000-01-01', '2018-12-31')
+        checkSrvCls.sat_nbr_op_ana()
+        # get_adm_op_sat_nbr_data(self, ntf_rsn, srv_cls, ntc_type, date_s, date_e):
+        #checkSrvCls.get_adm_sat_nbr_info('USA')
+        #checkSrvCls.getOpSatNbrInfo('USA', 532)
+        checkSrvCls.get_sat_nbr_info()
+        #data = checkSrvCls.adm_sat_nbr_data
+        d1 = checkSrvCls.sat_nbr_adm_ana()
+        loop_cnt += 1
+    loop_cnt
+
+******op_BW_stt backup 2019-03-04 am
+from ntc_fq_band_ana import ntc_fq_band_ana
+from ITU_mdb_query import ITU_mdb_query
+import re
+from collections import Counter
+
+
+def op_BW_stt(year_start,year_end,OP_lst, ntf_rsn, ntc_type):
+    with open(OP_lst) as f:
+        con_lst = f.readlines()
+    op_counter=find_op_lst(con_lst)
+    op_BW_stt_lst = []
+    op_ntcQnt_stt_lst = []
+    for i in range(year_start, year_end, 1):
+        year = str(i)
+        [op_ntcid_dict, op_ntc_qnt_dict]=op_annual_ntcQnt_ntcID(OP_lst, year, ntf_rsn, ntc_type)
+
+
+def op_annual_BW_stt(op_ntcid_dict):
+    op_annual_BW = dict()
+    for c in op_ntcid_dict:
+        if op_ntcid_dict[c].__len__() > 0:
+            op_bw = ntc_fq_band_ana().fq_dict_ini
+            for id in op_ntcid_dict[c][0]:
+                bw = ntc_fq_band_ana().fq_ana(id)
+                for sub_band in bw:
+                    op_bw.update()
+
+
+
+    return op_annual_BW
+
+
+
+def op_annual_ntcQnt_ntcID(OP_lst,year,ntf_rsn,ntc_type):
+    op_ntcid_dict = dict()
+    op_ntc_qnt_dict = dict()
+    with open(OP_lst) as f:
+        con_lst = f.readlines()
+    op_counter=find_op_lst(con_lst)
+
+    for c in op_counter:
+        op_ntcid_dict.update({c:find_ntc_id(c,con_lst,year,ntf_rsn,ntc_type)})
+        if op_ntcid_dict[c].__len__() > 0:
+            op_ntc_qnt_dict.update({c: op_ntcid_dict[c][0].__len__()})
+        else:
+            op_ntc_qnt_dict.update({c: 0})
+
+    return op_ntcid_dict, op_ntc_qnt_dict
+
+def find_ntc_id(c,con_lst,year,ntf_rsn,ntc_type):
+    ntc_id_lst = []
+    for row in con_lst:
+        pattern = (c+',(\w+),(\d+)')
+        match = re.match(pattern, row)
+        if match != None:
+            adm = match.group(1)
+            op_id = match.group(2)
+            adm_op_ntc_id = ITU_mdb_query().find_ntc_lst_byOP_date(adm,op_id,year,ntf_rsn,ntc_type)
+            if adm_op_ntc_id.__len__() > 0:
+                ntc_id_lst.append(adm_op_ntc_id)
+
+
+    return ntc_id_lst
+
+def find_op_lst(lst):
+    op_lst = []
+    cnt = 0
+    for row in lst:
+        p = '(\w+)'
+        match = re.match(p,row)
+        if match == None:
+            print('None')
+        else:
+            match = re.match(p,row).group(0)
+            op_lst.append(match)
+            cnt = cnt + 1
+        C = Counter(op_lst)
+
+    return C
+
+
+
+
+op_BW_stt(2016,2017,'OP_lst', 'C', 'G')
+2013-2016 C filing bw
+<type 'list'>:
+[{'CHINASATCOM': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'SEE': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'INTELSAT': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'ARABSAT': {'c': 11725, 'ka': 56000.0, 'ku': 10500.0, 'qv': 129500.0}, 'SES': {'c': 20200.0, 'ka': 80250.0, 'ku': 24500.0, 'qv': 70000.0}, 'VIASAT': {'c': 0, 'ka': 15300.0, 'ku': 0, 'qv': 24000.0}, 'HISPASAT': {'c': 12225.0, 'ka': 51290.0, 'ku': 13800.0, 'qv': 60000.0}},
+{'CHINASATCOM': {'c': 10090.0, 'ka': 43400.0, 'ku': 10550.0, 'qv': 0}, 'SEE': {'c': 0, 'ka': 6750.0, 'ku': 0, 'qv': 0}, 'INTELSAT': {'c': 1975.0, 'ka': 2000.0, 'ku': 2000.0, 'qv': 0}, 'ARABSAT': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'SES': {'c': 1200.0, 'ka': 5750.0, 'ku': 2000.0, 'qv': 0}, 'VIASAT': {'c': 0, 'ka': 5100.0, 'ku': 0, 'qv': 0}, 'HISPASAT': {'c': 7500.0, 'ka': 25850.0, 'ku': 7800.0, 'qv': 40000.0}},
+{'CHINASATCOM': {'c': 5025, 'ka': 25050.0, 'ku': 1800.0, 'qv': 0}, 'SEE': {'c': 1725.0, 'ka': 5500.0, 'ku': 1800.0, 'qv': 8000.0}, 'INTELSAT': {'c': 1975.0, 'ka': 5400.0, 'ku': 2000.0, 'qv': 0}, 'ARABSAT': {'c': 4800.0, 'ka': 14800.0, 'ku': 1500.0, 'qv': 0}, 'SES': {'c': 13650.0, 'ka': 43300.0, 'ku': 17550.0, 'qv': 32000.0}, 'VIASAT': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'HISPASAT': {'c': 16875.0, 'ka': 59450.0, 'ku': 18900.0, 'qv': 100000.0}},
+{'CHINASATCOM': {'c': 6955.0, 'ka': 41150.0, 'ku': 11400.0, 'qv': 90000.0}, 'SEE': {'c': 1675, 'ka': 5900.0, 'ku': 3550.0, 'qv': 8000.0}, 'INTELSAT': {'c': 0, 'ka': 0, 'ku': 0, 'qv': 0}, 'ARABSAT': {'c': 4075.0, 'ka': 15800.0, 'ku': 10100.0, 'qv': 18500.0}, 'SES': {'c': 5025, 'ka': 22650.0, 'ku': 6300.0, 'qv': 34000.0}, 'VIASAT': {'c': 0, 'ka': 70000.0, 'ku': 550.0, 'qv': 80000.0}, 'HISPASAT': {'c': 28125.0, 'ka': 104570.0, 'ku': 31100.0, 'qv': 150000.0}}]
+
+
+op_BW_stt(2012,2019,'OP_lst', 'C', 'G')
+#######2019-6-18########
+from srvNtcStt import srvNtcStt
+import numpy as np
+import freqHandle as fh
+import ntc_fq_band_ana
+
+if __name__ == "__main__":
+    id=113520308
+    fq_band_path = 'fq_band_lst'
+    ratio = ntc_fq_band_ana.fq_ana(id, fq_band_path)
+    #checkEW = srvNtcStt('EW', 1990, 2018)
+    id=113520308
+    d=fh.freq_mergByNtcID(id)
+    kk
+
+
+
+
+    sttList = np.zeros((8, 2))
+    loop_cnt = 0
+    out = 0
+    for x in range(2010, 2019, 1):
+        checkSrvCls = srvNtcStt('C', 'N', 'EC', x, x)
+        #adm_ntc_type_check(ntf_rsn, ntc_type, srv_cls, d_s, d_e)
+       # checkSrvCls.adm_ntc_type_check('C', 'G', 'EC', str(x)+'-01-01', str(x)+'-12-31')
+        info = checkSrvCls.sat_nbr_world_count()
+        if loop_cnt == 0:
+            out = [[x, info]]
+        else:
+            out.append([x, info])
+        loop_cnt += 1
+    loop_cnt
+#########################################################

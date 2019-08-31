@@ -1,0 +1,20 @@
+        qry = "SELECT DISTINCT " \
+              "com_el.ntc_id,com_el.ntf_rsn,com_el.sat_name,com_el.long_nom,com_el.d_rcv " \
+              "FROM " \
+              "com_el,grp " \
+              "where com_el.adm='' and com_el.ntc_id=grp.ntc_id and " \
+              "(grp.op_agcy=33 or grp.op_agcy=13 or grp.op_agcy=37)"
+
+        qry = "SELECT DISTINCT " \
+              "com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntf_rsn='N' and com_el.d_rcv>#2010-01-01# " \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls='EW'"
+
+        qry = "SELECT DISTINCT " \
+              "com_el.adm " \
+              "FROM " \
+              "com_el,grp,srv_cls " \
+              "WHERE com_el.ntf_rsn='N' and com_el.d_rcv>#" + self.d_s + "# and com_el.d_rcv<#" + self.d_e + "#" \
+              "and com_el.ntc_id = grp.ntc_id and grp.grp_id = srv_cls.grp_id and srv_cls.stn_cls="+self.srv
